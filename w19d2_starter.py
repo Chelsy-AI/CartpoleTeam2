@@ -96,7 +96,7 @@ import matplotlib.pyplot as plt
 # =============================================================================
 
 # Student info - CHANGE THIS!
-STUDENT_NAME = "Your Name"
+STUDENT_NAME = "Drashti Patel"
 IMPROVEMENT_AREA = "None"  # Options: "Learning Rate", "Exploration", "State Bins", "Reward Shaping"
 
 # Random seed for reproducibility - DO NOT CHANGE for fair comparison!
@@ -104,11 +104,11 @@ RANDOM_SEED = 42
 
 # Default hyperparameters
 DEFAULT_CONFIG = {
-    "learning_rate": 0.2,
+    "learning_rate": 0.3,
     "discount_factor": 0.99,
     "epsilon_start": 1.0,
     "epsilon_end": 0.01,
-    "epsilon_decay": 0.995,
+    "epsilon_decay": 0.998,
     "num_bins": 12,
     "num_episodes": 500,
 }
@@ -159,9 +159,9 @@ class QLearningAgent:
 
         return {
             "cart_pos": np.linspace(-2.4, 2.4, num_bins),
-            "cart_vel": np.linspace(-3, 3, num_bins),
-            "pole_angle": np.linspace(-0.21, 0.21, num_bins * 2),  # Finer for angle
-            "pole_vel": np.linspace(-3, 3, num_bins),
+            "cart_vel": np.linspace(-3.0, 3.0, num_bins),
+            "pole_angle": np.linspace(-0.21, 0.21, num_bins * 4),
+            "pole_vel": np.linspace(-3.0, 3.0, num_bins),
         }
 
         # IDEAS:
