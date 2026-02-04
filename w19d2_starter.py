@@ -136,6 +136,8 @@ class QLearningAgent:
         self.epsilon = self.epsilon_start
         self.q_table = defaultdict(lambda: np.zeros(2))
         self.total_updates = 0
+        self.visit_counts = {}
+        self.min_lr = 0.01
 
         # Create discretization bins
         self.bins = self.create_bins()
@@ -201,7 +203,15 @@ class QLearningAgent:
           - Scheduled decay
         """
         # ========== MODIFY HERE: LEARNING RATE STRATEGY ==========
-        return self.learning_rate
+        if state is None:
+            return self.learning_rate
+
+        n = self.visit_counts.get(state, 0) + 1
+        self.visit_counts[state] = n
+
+        k = 0.001
+        lr = self.learning_rate / (1.0 + k * n)
+        return max(self.min_lr, lr)
 
         # IDEAS:
         # 1. Time-based decay:
@@ -242,9 +252,10 @@ class QLearningAgent:
             # Explore: random action
             return np.random.randint(0, 2)
         else:
-            # Exploit: best action
-            return np.argmax(q_values)
-
+            # Exploit: random tie-break among best actions
+            best_actions = np.flatnonzero(q_values == np.max(q_values))
+            return np.random.choice(best_actions)
+        
         # IDEAS:
         # 1. Boltzmann/Softmax exploration:
         #    temperature = 1.0
@@ -278,7 +289,19 @@ class QLearningAgent:
         WARNING: Be careful not to make total rewards negative!
         """
         # ========== MODIFY HERE: REWARD SHAPING ==========
-        return base_reward
+        cart_pos, cart_vel, pole_angle, pole_vel = next_state
+
+        pos_norm = abs(cart_pos) / 2.4
+        angle_norm = abs(pole_angle) / 0.21
+
+        penalty = 0.10 * angle_norm + 0.02 * pos_norm
+
+        shaped = base_reward - penalty
+
+        if done:
+            shaped -= 1.0
+
+        return shaped
 
         # IDEAS:
         # 1. Angle-based penalty (encourage upright pole):
