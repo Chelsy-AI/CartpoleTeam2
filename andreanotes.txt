@@ -1,0 +1,2 @@
+reward shaping
+In CartPole, the reward already tells the agent exactly what to do: stay alive longer. When I added extra penalties for angle and position, I accidentally made the signal noisier. The agent sometimes did well, but it couldn’t do it consistently. Hyperparameter tuning worked better because it didn’t change the goal — it just helped the agent learn the original reward more smoothly.
