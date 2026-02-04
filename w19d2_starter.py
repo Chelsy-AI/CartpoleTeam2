@@ -96,19 +96,19 @@ import matplotlib.pyplot as plt
 # =============================================================================
 
 # Student info - CHANGE THIS!
-STUDENT_NAME = "Your Name"
-IMPROVEMENT_AREA = "None"  # Options: "Learning Rate", "Exploration", "State Bins", "Reward Shaping"
+STUDENT_NAME = "Andrea Churchwell"
+IMPROVEMENT_AREA = "Reward Shaping"  # Options: "Learning Rate", "Exploration", "State Bins", "Reward Shaping"
 
 # Random seed for reproducibility - DO NOT CHANGE for fair comparison!
 RANDOM_SEED = 42
 
 # Default hyperparameters
 DEFAULT_CONFIG = {
-    "learning_rate": 0.2,
+    "learning_rate": 0.3,
     "discount_factor": 0.99,
     "epsilon_start": 1.0,
     "epsilon_end": 0.01,
-    "epsilon_decay": 0.995,
+    "epsilon_decay": 0.998,
     "num_bins": 12,
     "num_episodes": 500,
 }
@@ -265,53 +265,35 @@ class QLearningAgent:
     # MODIFY HERE: REWARD SHAPING (Member 4)
     # =========================================================================
     def shape_reward(self, base_reward, state, next_state, done):
-        """
-        Shape the reward signal to guide learning.
+        cart_pos, cart_vel, pole_angle, pole_vel = next_state
 
-        MEMBER 4: Modify this function to implement reward shaping!
+        # Normalize (so weights are meaningful)
+        pos_norm   = abs(cart_pos) / 2.4
+        angle_norm = abs(pole_angle) / 0.21
 
-        Ideas to try:
-          - Angle-based penalty
-          - Velocity penalty
-          - Position bonus
+        # Keep penalties SMALL (survival reward should still dominate)
+        penalty = 0.10 * angle_norm + 0.02 * pos_norm
 
-        WARNING: Be careful not to make total rewards negative!
-        """
-        # ========== MODIFY HERE: REWARD SHAPING ==========
-        return base_reward
+        shaped = base_reward - penalty
 
-        # IDEAS:
-        # 1. Angle-based penalty (encourage upright pole):
-        #    angle_penalty = abs(state[2]) * 2
-        #    return base_reward - angle_penalty
-        #
-        # 2. Velocity penalty (encourage smooth control):
-        #    vel_penalty = abs(state[1]) * 0.1 + abs(state[3]) * 0.1
-        #    return base_reward - vel_penalty
-        #
-        # 3. Center position bonus:
-        #    pos_penalty = abs(state[0]) * 0.5
-        #    return base_reward - pos_penalty
-        #
-        # 4. Potential-based shaping (provably safe):
-        #    def potential(s): return -abs(s[2])
-        #    F = self.discount_factor * potential(next_state) - potential(state)
-        #    return base_reward + F
-        # ===================================================
+        # Small failure penalty
+        if done:
+            shaped -= 1.0
 
-    def update(self, state, action, reward, next_state, done):
-        """Update Q-value based on experience."""
+        # IMPORTANT: no aggressive clamp to 0.1
+        return shaped
+
+    def update(self, state, action, reward, next_state, terminated, truncated):
         discrete_state = self.discretize(state)
         next_discrete_state = self.discretize(next_state)
 
-        # Apply reward shaping
+        done = terminated or truncated
         shaped_reward = self.shape_reward(reward, state, next_state, done)
 
-        # Get learning rate
         lr = self.get_learning_rate(discrete_state)
-
-        # Q-Learning update
         old_value = self.q_table[discrete_state][action]
+
+        done = terminated or truncated  # ✅ define done
 
         if done:
             td_target = shaped_reward
@@ -320,6 +302,7 @@ class QLearningAgent:
 
         self.q_table[discrete_state][action] = old_value + lr * (td_target - old_value)
         self.total_updates += 1
+
 
     def decay_epsilon(self):
         """Decay exploration rate after each episode."""
@@ -432,7 +415,8 @@ def train(config, show_plot=True, verbose=True):
             action = agent.select_action(state, training=True)
             next_state, reward, terminated, truncated, _ = env.step(action)
 
-            agent.update(state, action, reward, next_state, terminated or truncated)
+            agent.update(state, action, reward, next_state, terminated, truncated)
+
 
             total_reward += reward
             state = next_state

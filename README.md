@@ -25,12 +25,12 @@ The project explores training behavior, performance variability, and reproducibi
 
 ## Project Roles & Responsibilities
 
-| Role        | Name               | Responsibilities |
-|-------------|--------------------|------------------|
-| **Runner** | Mark Young | Executes training runs, manages experiment execution |
-| **Maintainer** | Drashti Patel | Maintains codebase, handles structure, version control, and fixes |
-| **Analyst** | Andrea Churchwell | Analyzes results, evaluates performance trends, documents findings |
-| **Reviewer** | Tashoy Miller | Reviews code, validates results, ensures clarity and correctness |
+| Role             | Name               | Responsibilities                                                   |
+|------------------|--------------------|--------------------------------------------------------------------|
+| **Runner**       | Mark Young         | Executes training runs, manages experiment execution               |
+| **Maintainer**   | Drashti Patel      | Maintains codebase, handles structure, version control, and fixes  |
+| **Analyst**      | Andrea Churchwell  | Analyzes results, evaluates performance trends, documents findings |
+| **Reviewer**     | Tashoy Miller      | Reviews code, validates results, ensures clarity and correctness   |
 
 ---
 
