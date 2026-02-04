@@ -301,7 +301,7 @@ class QLearningAgent:
         lr = self.get_learning_rate(discrete_state)
         old_value = self.q_table[discrete_state][action]
 
-        done = terminated or truncated  # ✅ define done
+        done = terminated or truncated  
 
         if done:
             td_target = shaped_reward
