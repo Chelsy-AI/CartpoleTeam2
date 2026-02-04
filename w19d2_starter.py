@@ -28,6 +28,14 @@ Output:
 # SECTION 0: AUTO VENV SETUP
 # =============================================================================
 
+import matplotlib.pyplot as plt
+import numpy as np
+import gymnasium as gym
+from collections import defaultdict
+from datetime import datetime
+import argparse
+import time
+import json
 import os
 import sys
 import subprocess
@@ -38,10 +46,12 @@ VENV_DIR = os.path.join(SCRIPT_DIR, ".venv_w19d2")
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
 REQUIREMENTS = ["gymnasium", "numpy", "matplotlib"]
 
+
 def is_in_venv():
     return hasattr(sys, 'real_prefix') or (
         hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
     ) or os.environ.get("W19D2_VENV_ACTIVE") == "1"
+
 
 def setup_venv():
     print("=" * 60)
@@ -60,11 +70,13 @@ def setup_venv():
         python_path = os.path.join(VENV_DIR, "bin", "python")
 
     print("Installing dependencies...")
-    subprocess.run([pip_path, "install", "--quiet", "--upgrade", "pip"], check=True)
+    subprocess.run([pip_path, "install", "--quiet",
+                   "--upgrade", "pip"], check=True)
     subprocess.run([pip_path, "install", "--quiet"] + REQUIREMENTS, check=True)
     print("Ready!\n")
 
     return python_path
+
 
 def run_in_venv():
     python_path = setup_venv()
@@ -74,6 +86,7 @@ def run_in_venv():
     result = subprocess.run(args, env=env)
     sys.exit(result.returncode)
 
+
 if not is_in_venv():
     run_in_venv()
 
@@ -81,15 +94,6 @@ if not is_in_venv():
 # SECTION 1: IMPORTS (after venv is active)
 # =============================================================================
 
-import json
-import time
-import argparse
-from datetime import datetime
-from collections import defaultdict
-
-import gymnasium as gym
-import numpy as np
-import matplotlib.pyplot as plt
 
 # =============================================================================
 # SECTION 2: CONFIGURATION
@@ -160,7 +164,8 @@ class QLearningAgent:
         return {
             "cart_pos": np.linspace(-2.4, 2.4, num_bins),
             "cart_vel": np.linspace(-3, 3, num_bins),
-            "pole_angle": np.linspace(-0.21, 0.21, num_bins * 2),  # Finer for angle
+            # Finer for angle
+            "pole_angle": np.linspace(-0.21, 0.21, num_bins * 2),
             "pole_vel": np.linspace(-3, 3, num_bins),
         }
 
@@ -242,8 +247,10 @@ class QLearningAgent:
             # Explore: random action
             return np.random.randint(0, 2)
         else:
-            # Exploit: best action
-            return np.argmax(q_values)
+            # Exploit: random tie-break among best actions
+            best_actions = np.flatnonzero(q_values == np.max(q_values))
+            return np.random.choice(best_actions)
+        # =========================================================
 
         # IDEAS:
         # 1. Boltzmann/Softmax exploration:
@@ -264,6 +271,7 @@ class QLearningAgent:
     # =========================================================================
     # MODIFY HERE: REWARD SHAPING (Member 4)
     # =========================================================================
+
     def shape_reward(self, base_reward, state, next_state, done):
         cart_pos, cart_vel, pole_angle, pole_vel = next_state
 
@@ -298,9 +306,11 @@ class QLearningAgent:
         if done:
             td_target = shaped_reward
         else:
-            td_target = shaped_reward + self.discount_factor * np.max(self.q_table[next_discrete_state])
+            td_target = shaped_reward + self.discount_factor * \
+                np.max(self.q_table[next_discrete_state])
 
-        self.q_table[discrete_state][action] = old_value + lr * (td_target - old_value)
+        self.q_table[discrete_state][action] = old_value + \
+            lr * (td_target - old_value)
         self.total_updates += 1
 
 
@@ -319,7 +329,8 @@ class QLearningAgent:
     def save(self, filepath):
         """Save Q-table to JSON."""
         # Convert defaultdict to regular dict with string keys
-        q_table_serializable = {str(k): list(v) for k, v in self.q_table.items()}
+        q_table_serializable = {str(k): list(v)
+                                for k, v in self.q_table.items()}
 
         data = {
             "student_name": STUDENT_NAME,
@@ -401,7 +412,8 @@ def train(config, show_plot=True, verbose=True):
         print(f"  Improvement: {IMPROVEMENT_AREA}")
         print(f"  Seed: {RANDOM_SEED}")
         print(f"{'='*60}")
-        print(f"\n  {'Episode':>8} | {'Score':>6} | {'Avg(10)':>8} | {'Epsilon':>8}")
+        print(
+            f"\n  {'Episode':>8} | {'Score':>6} | {'Avg(10)':>8} | {'Epsilon':>8}")
         print("  " + "-" * 45)
 
     start_time = time.time()
@@ -436,7 +448,8 @@ def train(config, show_plot=True, verbose=True):
             # Moving average
             window = 10
             if len(scores) >= window:
-                moving_avg = [np.mean(scores[max(0, i-window+1):i+1]) for i in range(len(scores))]
+                moving_avg = [np.mean(scores[max(0, i-window+1):i+1])
+                              for i in range(len(scores))]
                 line2.set_data(episodes, moving_avg)
 
             line3.set_data(episodes, epsilons)
@@ -447,8 +460,10 @@ def train(config, show_plot=True, verbose=True):
 
         # Print progress
         if verbose and ((episode + 1) % 50 == 0 or episode < 5):
-            avg_10 = np.mean(scores[-10:]) if len(scores) >= 10 else np.mean(scores)
-            print(f"  {episode + 1:>8} | {total_reward:>6.0f} | {avg_10:>8.1f} | {agent.epsilon:>8.4f}")
+            avg_10 = np.mean(
+                scores[-10:]) if len(scores) >= 10 else np.mean(scores)
+            print(
+                f"  {episode + 1:>8} | {total_reward:>6.0f} | {avg_10:>8.1f} | {agent.epsilon:>8.4f}")
 
     env.close()
     training_time = time.time() - start_time
@@ -501,7 +516,8 @@ def evaluate(agent, num_episodes=100, verbose=True):
         total_reward = 0
 
         for step in range(500):
-            action = agent.select_action(state, training=False)  # No exploration
+            action = agent.select_action(
+                state, training=False)  # No exploration
             next_state, reward, terminated, truncated, _ = env.step(action)
             total_reward += reward
             state = next_state
@@ -512,7 +528,8 @@ def evaluate(agent, num_episodes=100, verbose=True):
         scores.append(total_reward)
 
         if verbose and (episode + 1) % 25 == 0:
-            print(f"  Episode {episode + 1}/100: Mean so far = {np.mean(scores):.1f}")
+            print(
+                f"  Episode {episode + 1}/100: Mean so far = {np.mean(scores):.1f}")
 
     env.close()
 
@@ -528,10 +545,13 @@ def evaluate(agent, num_episodes=100, verbose=True):
 
     if verbose:
         print(f"\n  Results:")
-        print(f"    Mean Score:    {results['mean']:.1f} ± {results['std']:.1f}")
+        print(
+            f"    Mean Score:    {results['mean']:.1f} ± {results['std']:.1f}")
         print(f"    Min/Max:       {results['min']} / {results['max']}")
-        print(f"    Success Rate:  {results['success_rate']:.1f}% (score ≥ 200)")
-        print(f"    Perfect Rate:  {results['perfect_rate']:.1f}% (score = 500)")
+        print(
+            f"    Success Rate:  {results['success_rate']:.1f}% (score ≥ 200)")
+        print(
+            f"    Perfect Rate:  {results['perfect_rate']:.1f}% (score = 500)")
 
     return results
 
@@ -768,10 +788,14 @@ def generate_report(training_results, eval_results, config, output_path):
 
 def main():
     parser = argparse.ArgumentParser(description="W19D2 Q-Learning Starter")
-    parser.add_argument("--episodes", type=int, default=500, help="Number of training episodes")
-    parser.add_argument("--no-plot", action="store_true", help="Disable live plot")
-    parser.add_argument("--evaluate", action="store_true", help="Evaluate only (load existing Q-table)")
-    parser.add_argument("--keep-venv", action="store_true", help="Keep venv after running")
+    parser.add_argument("--episodes", type=int, default=500,
+                        help="Number of training episodes")
+    parser.add_argument("--no-plot", action="store_true",
+                        help="Disable live plot")
+    parser.add_argument("--evaluate", action="store_true",
+                        help="Evaluate only (load existing Q-table)")
+    parser.add_argument("--keep-venv", action="store_true",
+                        help="Keep venv after running")
     args = parser.parse_args()
 
     # Create results directory
